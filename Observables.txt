@@ -1,0 +1,310 @@
+Observables and Angular 2 pipes
+
+Outline
+RxJS and Observables
+● Introduction
+● Create observables from scratch
+● Subject
+● Create observables from events/arrays
+● Other creation operators: interval, timer and range
+● Useful operators: map, pluck etc.
+Filter problems with a custom search pipe in Angular 2
+ Angular 2 built-in pipes
+ Custom search pipe 如何自己订制一个pipe
+
+What is Reactive programming? 是一种编程模式，是一种基于事件的异步的数据流的处理；数据流可以来自于很多source；
+异步请求；
+● Programing paradigm that works with event-based asynchronous data streams
+● Data streams can be created from many things
+○ UI Events
+○ Http requests
+○ File Systems
+○ Array-like Objects
+○ Memory/Cache
+
+https://www.youtube.com/watch?v=ei7FsoXKPl0&t=1115s
+https://gist.github.com/staltz/868e7e9bc2a7b8c1f754
+
+
+A stream? 时间序列； Marble diagram；
+A sequence of ongoing events ordered in time
+Emits values, error or complete signal
+
+Marble diagram  
+
+indicates an event with some value e.g. coordinates of a click  -> indicates an error -> indicates that stream has completed
+
+Observable
+
+1.Observables are an invokable collection of future values or events, used to
+watch these streams and emit notifications when a value, error or complete
+signal is returned.
+
+本质上是类似于数组一样的数据结构，没有index； 只有时间的节点作为坐标；Observable 的序列用来监测data stream；
+
+2.Observables can be subscribed to by an observer
+
+3.Observables will constantly watch streams and update accordingly
+
+4.We can interact with data streams as any regular arrays
+像常规的数组一样处理 异步的数据流的处理变得非常简洁明了；
+
+
+Reactive Extensions / ReactiveX
+A library for composing asynchronous programs by using observable
+sequences
+
+Provides a long list of operators which allow us to filter, select, transform,
+combine and compose observables
+
+Reactive Extension Implementations：
+JavaScript：RxJS；
+
+
+
+What will we cover in the coding part? 代码部分需要完成的任务：
+
+● Create observables from scratch
+	observable and promise
+	essential concepts: observable, observable execution, observer, subscription
+	pull vs push
+
+Subject
+Create observables from events/arrays
+Other creation operators: interval, timer and range
+Useful operators: map, pluck etc.
+
+
+Observable and promise: analogy
+Promise
+let promise = new Promise(resolve => {
+console.log('promise execution');
+setTimeout(() => {
+resolve('promise resolved!');
+}, 1000)
+});
+promise.then(value => console.log(value));
+
+
+Observable
+let stream$ = new Observable(observer => {
+console.log('observable execution');
+setTimeout(() => {
+observer.next('observer next value!');
+}, 1000);
+});
+stream$.subscribe(value => console.log(value));
+
+
+
+import {Observable }  from 'rxjs';
+import {Component} from "@angular/core";
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+
+export class AppComponent {
+  title = 'Observables';
+  ngOnInit():void{
+    let promise = new Promise(resolve => {
+      console.log('promise execution');
+      setTimeout(() => {
+        resolve('promise resolved');
+    }, 1000);
+
+    });
+
+    promise.then(value => console.log(value));
+
+    let stream$ = new Observable(observer => {
+      console.log('observable execution');
+      observer.next(1);
+      observer.next(2);
+      setTimeout(() => {
+        observer.next('observer next value');
+      }, 10000);
+      observer.next(3);
+    });
+
+    stream$.subscribe(value => console.log(value));
+  }
+}
+
+
+
+
+Observable 可以return多个值（不管是同步还是异步的，同步异步交叉），而Promise只可以return一个值；
+Observable and promise: differences
+1.Observables can return multiple values, synchronous or asynchronous
+Promise can only return one single value
+Observable是可以cancel掉的，Promise就必然会resolve 或者是 reject；
+1.Observable can be canceled, Promise cannot be canceled,
+
+取消一个subscribe；
+变量名不能加$； 一个变量名后面加$ 就是stream；
+
+Essential concepts:
+
+1.Observable creation
+	manually: new Observable(function subscribe(observer) {..}) or
+	Observable.create(..)
+	creation operators: of, from, interval etc.
+
+http://reactivex.io/rxjs/manual/overview.html#observable
+
+
+Essential concepts
+
+Observable subscription
+subscribe calls are not shared among multiple Observers of the same Observable. When
+calling observable.subscribe with an Observer, the function subscribe
+Observable.create(function subscribe(observer) {…}) is run for that given
+Observer.
+Subscribing to an Observable is like calling a function, providing callbacks where the data
+will be delivered to.
+
+
+What is a Subscription? A Subscription is an object that represents a disposable resource,
+usually the execution of an Observable.
+
+
+Essential concepts
+
+Observable execution 每subscribe一次，会执行一次函数的备份；取一个instance 出来从头到尾；
+
+The code inside Observable.create(function subscribe(observer){…}) represents an
+"Observable execution", a lazy computation that only happens for each Observer that
+subscribes.
+
+function subscribe(observe)  只有subscribe 的时候才会执行；
+
+
+● There are three types of values an Observable Execution can deliver:
+a. "next" notification: sends a value such as a Number, a String, an Object, etc.
+b. "error" notification: sends a JavaScript Error or exception.
+c. "complete" notification: does not send a value.
+
+Essential concepts
+Observable execution disposal (unsubscription)
+
+When observable.subscribe is called, the Observer gets attached to the newly created
+Observable execution, but also this call returns an object, the Subscription.
+
+With subscription.unsubscribe() you can cancel the ongoing execution.
+
+Each Observable must define how to dispose resources of that execution when we create
+the Observable using create(). You can do that by returning a custom unsubscribe
+function from within function subscribe().
+
+Essential concepts
+Observer
+What is an Observer? An Observer is a consumer of values delivered by an Observable.
+Observers are simply a set of callbacks, one for each type of notification delivered by
+the Observable: next, error, and complete.
+
+● Observers are just objects with three callbacks, one for each type of notification that an
+Observable may deliver.
+
+● All three types of callbacks may be provided as arguments, just like Promise callbacks
+
+What can be neglected（哪些东西可以省略）（代码是非常详尽版）
+1.Observable execution callback function name subscribe
+2.Observable execution returned function name unsubscribe
+3.Observer callback function names when provided as arguments
+4.The last one (complete) or last two (error and complete) observer callbacks.
+Note: can not neglect first one when 2nd one present, similarly cannot neglect 2nd one
+when 3rd one present.
+
+
+Pull vs Push
+● Observables are lazy Push collections of multiple values.
+● Pull and Push are two different protocols how a data Producer can communicate with
+a data Consumer.
+
+Pull vs Push
+
+● What is Pull?
+In Pull systems, the Consumer determines when it receives data from the data
+Producer. The Producer itself is unaware of when the data will be delivered to the
+Consumer, e.g. : functions, iterators
+
+● What is push?
+In Push systems, the Producer determines when to send data to the Consumer. The
+Consumer is unaware of when it will receive that data, e.g. Promises, Observables
+
+Producer 											Consumer
+Pull Passive: produces data When              Active: decides when data is
+requested.   									requested.
+
+
+Push Active: produces data at its own  	     Passive: reacts to received
+pace.	 										data.
+
+Pull vs Push
+Observables are lazy Push collections of multiple values.
+
+			Single   			Multiple
+
+Pull       function             Iterator
+
+Push       Promise             Observable
+
+
+
+Pull and Push are two different protocols how a data Producer can communicate with a data Consumer.
+
+Pull vs Push
+Summary:
+A Function is a lazily evaluated computation that synchronously returns a single value on
+invocation.
+
+A generator is a lazily evaluated computation that synchronously returns zero to
+(potentially) infinite values on iteration.
+
+A Promise is a computation that may (or may not) eventually return a single value.
+
+An Observable is a lazily evaluated computation that can synchronously or asynchronously
+return zero to (potentially) infinite values from the time [4] http://reactivex.io/rxjs/manual/overview.html#observable it's invoked onwards.
+
+
+Subject(特殊的Observable)
+An RxJS Subject is a special type of Observable that allows values to be multicasted to many Observers.
+
+A Subject is like an Observable,but can multicast to many Observers. Subjects are like EventEmitters: they maintain a
+registry of many listeners. 可以被多个Observable subscribe的； 
+
+每个Observer都有一个事件发送的过程；
+
+Every Subject is an Observable. Given a Subject, you can subscribe to it, providing an Observer, which will start
+receiving values normally. From the perspective of the Observer, it cannot tell whether the Observable execution is
+coming from a plain unicast Observable or a Subject.
+
+每个Subject既可以是Observable 又可以是Observer； 
+
+Internally to the Subject, subscribe does not invoke a new execution that delivers values. It simply registers the
+given Observer in a list of Observers, similarly to how addListener usually works in other libraries and languages.
+
+Every Subject is an Observer. It is an object with the methods next(v), error(e), and complete(). To feed a new value to
+the Subject, just call next(theValue), and it will be multicasted to the Observers registered to listen to the Subject.
+
+
+BehaviorSubject： Subject的一种具体的variant   会maintain的一个 current value;当前会存储一个最近的发送的值；
+任何时候有新的Observer subscribe我，我都会把新的value 发送给你，说这是我现在的状态；
+
+BehaviorSubject是有状态的Subject；
+
+● One of the variants of Subjects is the BehaviorSubject, which has a notion of "the
+current value". It stores the latest value emitted to its consumers, and whenever a
+new Observer subscribes, it will immediately receive the "current value" from the
+BehaviorSubject.
+
+● BehaviorSubjects are useful for representing "values overtime". For instance, an
+event stream of birthdays is a Subject, but the stream of a person's age would be a
+BehaviorSubject.
+
+Subject 相当于一个Event Emitter；
+
+$表示这个变量是一个Observable； 
